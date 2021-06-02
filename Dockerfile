@@ -4,8 +4,6 @@ WORKDIR /usr/src/app
 
 COPY ./requirements.txt .
 
-CMD pip install -r requirements.txt
+RUN pip install --no-cache-dir -r ./requirements.txt
 
 COPY . .
-
-RUN python app.py
