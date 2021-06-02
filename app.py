@@ -1,13 +1,17 @@
 import re
 import jwt
 import os
+import logging
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
 from elasticsearch import Elasticsearch
 
-def main():
-    load_dotenv()
+load_dotenv()
 
+log = logging.getLogger(__name__)
+log.setLevel(logging.INFO)
+
+def main():
     try:
         es = Elasticsearch(
             [os.environ.get('ELASTICSEARCH_HOST', '')],
@@ -15,14 +19,14 @@ def main():
                        os.environ.get('ELASTICSEARCH_SECRET', ''))
         )
     except Exception as e:
-        print('\033[31m{}\033[m'.format('Erro ao conectar'))
+        log.error('Erro ao conectar')
         raise e
 
     try:
         vehicles = es.search(index=os.environ.get('ELASTICSEARCH_INDEX', ''), body={
                              'query': {'match_all': {}}, 'from': 0, 'size': 10_000})
     except Exception as e:
-        print('\033[31m{}\033[m'.format('Erro ao buscar'))
+        log.error('Erro ao buscar')
         raise e
 
     command = '!#/bin/bash'
@@ -37,7 +41,7 @@ def main():
                 '^-', '', re.search(r'-[A-z]{1,}$', vehicle['slug']).group()
             )
         except Exception as e:
-            print('\033[31m{}\033[m'.format('Erro ao pegar a unidade'))
+            log.error('Erro ao pegar a unidade')
             raise e
 
         try:
@@ -48,7 +52,7 @@ def main():
 
             token = jwt.encode(payload, os.environ.get('JWT_SECRET', ''), algorithm='HS256')
         except Exception as e:
-            print('\033[31m{}\033[m'.format('Falha ao gerar o token'))
+            log.error('Falha ao gerar o token')
             raise e
 
         try:
@@ -58,17 +62,17 @@ def main():
                 )
             )
         except Exception as e:
-            print('\033[31m{}\033[m'.format('Falha ao gerar o comando'))
+            log.error('Falha ao gerar o comando')
             raise e
 
     try:
         with open('out/reindex.sh', 'w') as file:
             file.write(command)
     except Exception as e:
-        print('\033[31m{}\033[m'.format('Falha ao salvar o arquivo'))
+        log.error('Falha ao salvar o arquivo')
         raise e
 
-    print('\033[32m{}\033[m'.format('Done.'))
+    print('\033[32m{}\033[m'.format('Successfully generated!'))
 
 
 if __name__ == '__main__':
