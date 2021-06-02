@@ -35,4 +35,6 @@ jobs:
           python -m pip install flake8
 
       - name: Run Flake8
-        run: python -m flake8
+        run: |
+          ls -l
+          python -m flake8
